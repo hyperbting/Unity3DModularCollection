@@ -98,7 +98,7 @@ public class UnityWebRequestHelper: MonoBehaviour {
     /// <param name="_progressAct"></param>
     /// <param name="_errorAct"></param>
     /// <returns></returns>
-    public IEnumerator Download(string _url, Action<byte[]> _successAct, Action<float> _progressAct, Action<string> _errorAct)
+    public IEnumerator DownloadWholeFile(string _url, Action<byte[]> _successAct, Action<float> _progressAct, Action<string> _errorAct)
     {
         using (UnityWebRequest request = UnityWebRequest.Get(_url))
         {
