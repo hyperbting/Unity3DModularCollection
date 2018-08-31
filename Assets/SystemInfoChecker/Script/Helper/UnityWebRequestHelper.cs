@@ -15,7 +15,7 @@ public class UnityWebRequestHelper : MonoBehaviour {
     private InternetConnectionCapability myInternetConnection = InternetConnectionCapability.Unknown;
 
     /// <summary>
-    /// UnityWebRequest Version of get header
+    /// UnityWebRequest Version of getting HTTP header
     /// </summary>
     /// <param name="_url"></param>
     /// <param name="_resultAct"></param>
@@ -24,7 +24,7 @@ public class UnityWebRequestHelper : MonoBehaviour {
     {
         using (UnityWebRequest uwr = UnityWebRequest.Head(_url))
         {
-            uwr.timeout = 60;
+            uwr.timeout = 30;
             yield return uwr.SendWebRequest();
 
             if (uwr.isNetworkError || uwr.isHttpError)
@@ -39,26 +39,24 @@ public class UnityWebRequestHelper : MonoBehaviour {
         }
     }
 
-    public IEnumerator CheckServerSupportPartialContent(string _url, Action<bool> _resultAct, Action<string> _errorAct = null)
+    public IEnumerator CheckServerSupportPartialContent(string _url, Action<bool> _resultAct, Action<string> _errorAct)
     {
-        using (UnityWebRequest www = UnityWebRequest.Head(_url))
+        using (UnityWebRequest uwr = UnityWebRequest.Head(_url))
         {
-            www.timeout = 60;
-            yield return www.SendWebRequest();
+            uwr.timeout = 30;
+            yield return uwr.SendWebRequest();
 
-            while (!www.isDone)
+            while (!uwr.isDone)
                 yield return null;
 
-            if (www.isNetworkError || www.isHttpError)
+            if (uwr.isNetworkError || uwr.isHttpError)
             {
-                if (_errorAct != null)
-                    _errorAct(www.error);
-
+                _errorAct(uwr.error);
                 _resultAct(false);
             }
             else
             {
-                _resultAct(www.GetResponseHeaders().ContainsKey("Accept-Ranges"));
+                _resultAct(uwr.GetResponseHeaders().ContainsKey("Accept-Ranges"));
             }
         }
     }
@@ -92,87 +90,42 @@ public class UnityWebRequestHelper : MonoBehaviour {
         }
     }
 
-    //public IEnumerator Download(string _abName, Action<AssetBundle> _successAct, Action<float> _pregressAct = null, Action<string> _errorAct = null)
-    //{
-    //    Hash128 desiredH128 = GetHash128FromABMI(_fileUrl.fileName);
-
-    //    //Clean up older AB in Cache
-    //    Caching.ClearOtherCachedVersions(_abName, desiredH128);
-
-    //    Debug.LogWarningFormat("Start to Download {0} from {1}", desiredH128, _fileUrl);
-    //    using (UnityWebRequest _uwr = UnityWebRequest.GetAssetBundle(_fileUrl.fullURL, desiredH128, 0))
-    //    {
-    //        _uwr.SendWebRequest();
-
-    //        float lastProgress = 0f;
-    //        int counter = 60;
-    //        while (!_uwr.isDone)
-    //        {
-    //            if (lastProgress == _uwr.downloadProgress)
-    //                counter--;
-    //            else
-    //            {
-    //                counter = 60;
-    //                lastProgress = _uwr.downloadProgress;
-    //            }
-
-    //            // wait too long, there is sth wrong with the Networking
-    //            if (counter < 0)
-    //                _uwr.Abort();
-
-    //            yield return new WaitForSeconds(0.5f);
-    //            //myProgressDelegate(myDRC, _uwr.downloadProgress * 0.9f);
-    //        }
-    //        // Debug.LogWarning("it is done");
-    //        if (!String.IsNullOrEmpty(_uwr.error))
-    //        {
-    //            if (_actFailure != null)
-    //                _actFailure(_uwr.error);
-    //            downloaderCount--;
-    //            myDRecordManager.ForceRemoveFinishedRecord(_fileUrl.fileName);
-    //            yield break;
-    //        }
-    //    } //www.Dispose();
-
-    //    yield return new WaitForSeconds(1f);
-    //    // Debug.LogWarning("telling you it is one");
-    //    myProgressDelegate(myDRC, 1);
-
-    //    myDRecordManager.UpdateRecord(_fileUrl.fileName); //currentFinished ++;
-    //    myDRecordManager.RemoveFinishedRecord(_fileUrl.fileName);
-    //    downloaderCount--;
-
-    //    yield return null;
-    //    if (successAction != null)
-    //        successAction();
-    //}
-
     /// <summary>
     /// Download Whole thing from start to end
     /// </summary>
     /// <param name="_url"></param>
     /// <param name="_successAct"></param>
-    /// <param name="_pregressAct"></param>
+    /// <param name="_progressAct"></param>
     /// <param name="_errorAct"></param>
     /// <returns></returns>
-    public IEnumerator Download(string _url, Action<byte[]> _successAct, Action<float> _pregressAct = null, Action<string> _errorAct = null)
+    public IEnumerator Download(string _url, Action<byte[]> _successAct, Action<float> _progressAct, Action<string> _errorAct)
     {
         using (UnityWebRequest request = UnityWebRequest.Get(_url))
         {
-            request.timeout = 60;
             request.SendWebRequest();
+
+            float lastProgress = 0f;
+            float lastMarkedTime = Time.time;
 
             while (!request.isDone)
             {
-                if (_pregressAct != null)
-                    _pregressAct(request.downloadProgress);
+                _progressAct(request.downloadProgress*0.9f);
                 yield return null;
+
+                if ((request.downloadProgress==lastProgress) && (Time.time-lastMarkedTime>5))
+                {
+                    _errorAct(request.error);
+                    yield break;
+                }
+
+                lastProgress = request.downloadProgress;
+                lastMarkedTime = Time.time;
             }
+            _progressAct(1);
 
             if (request.isNetworkError || request.isHttpError) // Error
             {
-                if (_errorAct != null)
-                    _errorAct(request.error);
+                _errorAct(request.error);
                 yield break;
             }
 
@@ -181,7 +134,7 @@ public class UnityWebRequestHelper : MonoBehaviour {
     }
 
     #region Utility
-    public IEnumerator CheckInternetConnection(List<string> _urls, Action<bool> _act = null)
+    public IEnumerator CheckInternetConnection(List<string> _urls, Action<bool> _successAct = null)
     {
         if (myInternetConnection == InternetConnectionCapability.Testing)
             yield break;
@@ -193,31 +146,26 @@ public class UnityWebRequestHelper : MonoBehaviour {
             if (myInternetConnection == InternetConnectionCapability.Okay)
                 yield break;
 
-            yield return StartCoroutine(CheckInternetConnection(ur, _act));
+            yield return StartCoroutine(CheckInternetConnection(ur, _successAct));
         }
     }
 
-    public IEnumerator CheckInternetConnection(string _url, Action<bool> _act = null)
+    public IEnumerator CheckInternetConnection(string _url, Action<bool> _successAct)
     {
         using (UnityWebRequest uwr = UnityWebRequest.Get(_url))
         {
-            uwr.timeout = 30;
+            uwr.timeout = 30; // InternetConnection check MUST be done in 30 seconds
             yield return uwr.SendWebRequest();
 
             if (uwr.isNetworkError || uwr.isHttpError)
             {
                 myInternetConnection = InternetConnectionCapability.ConnectionBlocked;
-
-                if(_act != null)
-                    _act(false);
+                _successAct(false);
+                yield break;
             }
-            else
-            {
-                myInternetConnection = InternetConnectionCapability.Okay;
 
-                if (_act != null)
-                    _act(true);
-            }                
+            myInternetConnection = InternetConnectionCapability.Okay;
+            _successAct(true);           
         }
     }
     #endregion
