@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SystemInfoChecker : MonoBehaviour {
+public class SystemInfoChecker: MonoBehaviour {
 
-    [Header("Debug Info")]
+    [Header("Info")]
     [SerializeField]
     private SystemMemoryCapability mySystemMemory = SystemMemoryCapability.Unknown;
     [SerializeField]
@@ -14,7 +14,7 @@ public class SystemInfoChecker : MonoBehaviour {
     public bool checkSystemMemoryAtStart;
     public bool checkInternetConnectionAtStart;
 
-    [Header("Settings-Internet Check Address")]
+    [Header("Settings: Internet Check Address")]
     [SerializeField]
     [Tooltip("Address to check")]
     private List<string> checkerAddress = new List<string>() { "https://www.google.com", "http://baidu.com" };
@@ -25,12 +25,23 @@ public class SystemInfoChecker : MonoBehaviour {
     void Start () {
 
         myUWRHelper = gameObject.AddComponent(typeof(UnityWebRequestHelper)) as UnityWebRequestHelper;
+        ResetStatus();
+        ProcessOnStart();
+    }
 
+    private void ResetStatus()
+    {
+        mySystemMemory = SystemMemoryCapability.Unknown;
+        myInternetConnection = UnityWebRequestHelper.InternetConnectionCapability.Unknown;
+    }
+
+    private void ProcessOnStart()
+    {
         if (checkSystemMemoryAtStart)
             CheckSystemMem();
 
         if (checkInternetConnectionAtStart)
-            CheckInternetConnection();
+            StartCoroutine(myUWRHelper.CheckInternetConnection(checkerAddress));
     }
 
     public void CheckSystemMem()
@@ -44,11 +55,6 @@ public class SystemInfoChecker : MonoBehaviour {
             mySystemMemory = SystemMemoryCapability.BetweenOneTwo;
         else
             mySystemMemory = SystemMemoryCapability.LargetThanTwo;
-    }
-
-    public void CheckInternetConnection()
-    {
-        StartCoroutine(myUWRHelper.CheckInternetConnection(checkerAddress));
     }
 
     public enum SystemMemoryCapability

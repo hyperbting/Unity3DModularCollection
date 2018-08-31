@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public class UnityWebRequestHelper : MonoBehaviour {
+public class UnityWebRequestHelper: MonoBehaviour {
 
     public delegate void InternetConnectionCapabilityDelegate(InternetConnectionCapability _fl);
     public InternetConnectionCapabilityDelegate myInteConnCapabilityDelegate;
