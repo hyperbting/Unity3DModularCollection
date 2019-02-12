@@ -121,6 +121,7 @@ public class UnityWebRequestHelper: MonoBehaviour {
                 lastProgress = request.downloadProgress;
                 lastMarkedTime = Time.time;
             }
+            yield return null;
             _progressAct(1);
 
             if (request.isNetworkError || request.isHttpError) // Error

@@ -76,17 +76,17 @@ public class FileIOHelper
     #endregion
 
     #region Directory
-    public void MakeDirectory(List<string> _dirnames)
+    public void MakeDirectory(List<string> _dirPaths)
     {
-        foreach (string _dName in _dirnames)
-            MakeDirectory(_dName);
+        for (int i = 0; i < _dirPaths.Count; i++)
+            MakeDirectory(_dirPaths[i]);
     }
 
-    public void MakeDirectory(string _dirname)
+    public void MakeDirectory(string _dirPAth)
     {
-        if (!Directory.Exists(_dirname))
+        if (!Directory.Exists(_dirPAth))
         {
-            Directory.CreateDirectory(_dirname);
+            Directory.CreateDirectory(_dirPAth);
         }
     }
     #endregion
