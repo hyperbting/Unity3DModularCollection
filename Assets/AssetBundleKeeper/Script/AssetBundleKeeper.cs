@@ -111,30 +111,6 @@ public class AssetBundleKeeper : MonoBehaviour
             ));
     }
 
-    //// This one should be in either FileIOHelper or ?
-    //public Texture2D LoadTextureFromDisk(string _path)
-    //{
-    //    // Create a texture. Texture size does not matter, since LoadImage will replace with with incoming image size.
-    //    Texture2D tex = new Texture2D(320, 320, TextureFormat.RGB24, false, true)
-    //    {// DXT5
-    //        name = _path
-    //    };
-
-    //    if (!myFileIOHelper.CheckFileExist(_path))
-    //    {
-    //        Debug.LogWarning("Texture not found " + _path);
-    //        return tex;
-    //    }
-
-    //    Debug.Log("LoadTextureFromDisk : " + _path);
-
-    //    tex.LoadImage(myFileIOHelper.LoadbyteFromFile(_path)); // LoadImage will always RGBA32 for PNG/ RGB24 for JPG
-    //    tex.Compress(true); // this will lower half the size but require some CPU power
-
-    //    Debug.Log(tex.dimension + " " + tex.width + "x" + tex.height + " " + tex.format + " " + tex.filterMode);
-    //    return tex;
-    //}
-
     /// <summary>
     /// Wrapper of CoreABDownloader, grap texture from AB
     /// </summary>
