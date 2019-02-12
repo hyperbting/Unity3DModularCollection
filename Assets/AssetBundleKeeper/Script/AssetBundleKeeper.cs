@@ -44,9 +44,13 @@ public class AssetBundleKeeper : MonoBehaviour
     public void DownloadABM()
     {
         //download ABM
-        StartCoroutine(CoreDownloader(ABM_PATH, ()=> {
-            StartCoroutine(LoadABMFromDisk());
-        }));
+        StartCoroutine(CoreDownloader(ABM_PATH, 
+            (byte[] _bytes)=> {
+
+                //load ABM after ABM is downloaded
+                StartCoroutine(LoadABMFromDisk());
+            }
+        ));
     }
     #endregion
 
@@ -155,40 +159,6 @@ public class AssetBundleKeeper : MonoBehaviour
     #endregion    
 
     #region TWO Core Downloader
-    IEnumerator ABMDownloader(Action<string> _fail = null)
-    {
-        if (ABM_PATH == null)
-            Debug.LogError("ABM_PATH not Set!");
-
-        Debug.Log("Try to Download " + ABM_PATH);
-        using (UnityWebRequest _uwr = UnityWebRequest.GetAssetBundle(ABM_PATH.fullURL))
-        {
-            _uwr.SendWebRequest();
-
-            yield return null;
-
-            while (!_uwr.isDone)
-                yield return null;
-
-            if (_uwr.isNetworkError || _uwr.isHttpError)
-            {
-                Debug.LogError("File Download Failed " + _uwr.error);
-                if (_fail != null)
-                    _fail(_uwr.error);
-            }
-            else
-            {
-                //save to disk
-
-                //load to MyABM
-            }
-
-            yield return null;
-            yield return null;
-            yield return null;
-        }
-    }
-
     /// <summary>
     /// CoreABDownloader is BOTH AssetBundle DOWNLOADER and USER
     /// It checks AB_Hash with Cache then download Latest AB if it has to
@@ -214,11 +184,13 @@ public class AssetBundleKeeper : MonoBehaviour
 
             yield return null;
 
-            if (_progress != null)
-                while (!_uwr.isDone)
+            while (!_uwr.isDone)
+            {
+                if (_progress != null)
                     _progress(_uwr.downloadProgress);
 
-            yield return null;
+                yield return null;
+            }
 
             if (_uwr.isNetworkError || _uwr.isHttpError)
             {
@@ -245,7 +217,7 @@ public class AssetBundleKeeper : MonoBehaviour
     /// <param name="_fileURL"></param>
     /// <param name="_fail"></param>
     /// <param name="_progress"></param>
-    IEnumerator CoreDownloader(FileURL _fileURL, Action _success = null, Action<string> _fail=null, Action<float> _progress=null)
+    IEnumerator CoreDownloader(FileURL _fileURL, Action<byte[]> _success = null, Action<string> _fail=null, Action<float> _progress=null)
     {
         Debug.Log("Try to Download " + _fileURL);
         using (UnityWebRequest _uwr = UnityWebRequest.Get(_fileURL.fullURL))
@@ -254,13 +226,13 @@ public class AssetBundleKeeper : MonoBehaviour
 
             yield return null;
 
-            if(_progress != null)
-                while (!_uwr.isDone)
+            while (!_uwr.isDone)
+            {
+                if (_progress != null)
                     _progress(_uwr.downloadProgress);
 
-            yield return null;
-            yield return null;
-            yield return null;
+                yield return null;
+            }
 
             if (_uwr.isNetworkError || _uwr.isHttpError)
             {
@@ -272,12 +244,14 @@ public class AssetBundleKeeper : MonoBehaviour
             {
                 Debug.Log("Downloaded: SAVE to DISK");
                 if (_uwr.downloadHandler.data != null)
+                {
                     File.WriteAllBytes(_fileURL.localPath, _uwr.downloadHandler.data);
 
-                yield return null;
+                    yield return null;
 
-                if (_success != null)
-                    _success();
+                    if (_success != null)
+                        _success(_uwr.downloadHandler.data);
+                }
             }
 
             yield return null;
