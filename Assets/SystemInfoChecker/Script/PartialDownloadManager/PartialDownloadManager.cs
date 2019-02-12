@@ -23,10 +23,27 @@ public class PartialDownloadManager : MonoBehaviour {
 
     private FileIOHelper myFileIOHelper;
 
+    protected void OnEnable()
+    {
+        myProgressDelegate += DefaultProgressEventHandler;
+    }
+
+    protected void OnDisable()
+    {
+        myProgressDelegate -= DefaultProgressEventHandler;
+    }
+
     protected void Start()
     {
         myFileIOHelper = new FileIOHelper();
     }
+
+    #region EventHandler
+    private void DefaultProgressEventHandler(float _progress)
+    {
+        Debug.LogFormat("Downloading... {0}", _progress);
+    }
+    #endregion
 
     /// <summary>
     /// 
@@ -42,6 +59,7 @@ public class PartialDownloadManager : MonoBehaviour {
         bool processed = false;
         bool supportPartialDL = false;
         int remoteFileSize = -1;
+
         StartCoroutine(myUnityWebRequestHelper.CheckFileSize(_fileUrl.fullURL,
             (int _val, bool _supportPartialDL) =>
             {
@@ -99,10 +117,11 @@ public class PartialDownloadManager : MonoBehaviour {
 
     protected IEnumerator DownloadWholeFile(FileURL _fileUrl, int _windowSize)
     {
-        int rfsize = -1;
-        int lfsize = -1;
-
+        int rfsize = -1;// remote file size
+        int lfsize = -1;// local file size
         var pd = UnityWebRequestHelper.DownloadProcess.BeforeProcess;
+
+        //check remote file status
         StartCoroutine(DownloadBehaviourCheck(_fileUrl,
             (UnityWebRequestHelper.DownloadProcess _dp, int _local, int _remote) =>
             {
@@ -112,6 +131,7 @@ public class PartialDownloadManager : MonoBehaviour {
             }
             ));
 
+        // wait until DownloadBehaviourCheck finished
         while (pd == UnityWebRequestHelper.DownloadProcess.BeforeProcess)
             yield return null;
 
@@ -131,6 +151,7 @@ public class PartialDownloadManager : MonoBehaviour {
                 yield break;
         }
 
+        // ONLY ONE of this DownloadWholeFile() can be processed at any given time
         if (downloading)
             yield return new WaitForSeconds(1f);
 
@@ -138,7 +159,6 @@ public class PartialDownloadManager : MonoBehaviour {
         for (int i = lfsize + 1; i < rfsize; i += _windowSize)
         {
             yield return StartCoroutine(
-
                 myUnityWebRequestHelper.DownloadParts(
                     (byte[] _bytes) => {
                         myFileIOHelper.AppendTo(_fileUrl.localPath, _bytes);

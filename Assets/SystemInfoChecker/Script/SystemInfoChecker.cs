@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SystemInfoChecker: MonoBehaviour {
+public partial class SystemInfoChecker: MonoBehaviour {
 
     [Header("Info")]
     [SerializeField]
@@ -10,27 +10,44 @@ public class SystemInfoChecker: MonoBehaviour {
     [SerializeField]
     private UnityWebRequestHelper.InternetConnectionCapability myInternetConnection = UnityWebRequestHelper.InternetConnectionCapability.Unknown;
 
-    [Header("Settings")]
-    public bool checkSystemMemoryAtStart;
-    public bool checkInternetConnectionAtStart;
-
-    [Header("Settings: Internet Check Address")]
-    [SerializeField]
-    [Tooltip("Address to check")]
-    private List<string> checkerAddress = new List<string>() { "https://www.google.com", "http://baidu.com" };
+    private bool hasGyroScope = false;
 
     private UnityWebRequestHelper myUWRHelper;
+
+    #region Delegate
+    delegate void DefaultDele();
+    #endregion
+    DefaultDele fUpdateDefaultDele;
+
 
     // Use this for initialization
     void Start () {
 
         myUWRHelper = gameObject.AddComponent(typeof(UnityWebRequestHelper)) as UnityWebRequestHelper;
         ResetStatus();
+
+        hasGyroScope = SystemInfo.supportsGyroscope;
+
         ProcessOnStart();
+
+        fUpdateDefaultDele += delegate { Debug.LogError(Time.realtimeSinceStartup); };
+    }
+
+    private void Update()
+    {
+        
+
+    }
+
+    private void FixedUpdate()
+    {
+        if(fUpdateDefaultDele != null)
+            fUpdateDefaultDele();
     }
 
     private void ResetStatus()
     {
+        hasGyroScope = false;
         mySystemMemory = SystemMemoryCapability.Unknown;
         myInternetConnection = UnityWebRequestHelper.InternetConnectionCapability.Unknown;
     }
@@ -42,6 +59,9 @@ public class SystemInfoChecker: MonoBehaviour {
 
         if (checkInternetConnectionAtStart)
             StartCoroutine(myUWRHelper.CheckInternetConnection(checkerAddress));
+
+        if (check360CapabilityAtStart)
+            TestCardboard360VideoCapability();
     }
 
     public void CheckSystemMem()
