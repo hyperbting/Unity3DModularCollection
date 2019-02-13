@@ -40,34 +40,40 @@ public class AssetBundleKeeper : MonoBehaviour
     }
     #endregion
 
-    #region Downloader Wrapper
+    #region Loader Wrappers based on CoreABDownloader/ CoreDownloader
     public void DownloadABM()
     {
         //download ABM
-        StartCoroutine(CoreDownloader(ABM_PATH, 
-            (byte[] _bytes)=> {
+        StartCoroutine(CoreDownloader(ABM_PATH,
+            (byte[] _bytes) => {
 
                 //load ABM after ABM is downloaded
                 StartCoroutine(LoadABMFromDisk());
             }
         ));
     }
-    #endregion
 
-    #region Loaders are based on Core AB Downloader
     /// <summary>
     /// Directly load ABM from Disk
     /// </summary>
     /// <param name="_forceReload"></param>
-    public IEnumerator LoadABMFromDisk(Action _failAct=null, bool _force = false)
+    public IEnumerator LoadABMFromDisk(bool _force=false, Action _failAct=null)
     {
-
         Debug.Log("Loading ABM");
-        if (!_force && myABM != null)
+        if (_force)
+        {
+            DestroyImmediate(myABM, true);
+            myABM = null;
+        }
+
+        if (myABM != null)
             yield break;
 
         //Load the manifest
-        AssetBundle manifestBundle = AssetBundle.LoadFromFile(ABM_PATH.localPath);
+        var abcr = AssetBundle.LoadFromFileAsync(ABM_PATH.localPath);
+        yield return abcr;
+
+        AssetBundle manifestBundle = abcr.assetBundle;
         if (manifestBundle == null)
         {
             Debug.LogError("No AB holding ABM in Disk");
@@ -77,62 +83,194 @@ public class AssetBundleKeeper : MonoBehaviour
         }
 
         var abr = manifestBundle.LoadAssetAsync<AssetBundleManifest>("AssetBundleManifest");
-        while (!abr.isDone)
-            yield return null;
+        yield return abr;
+
         myABM = abr.asset as AssetBundleManifest;
 
         yield return null;
         yield return null;
         yield return null;
-        manifestBundle.Unload(true);
+        manifestBundle.Unload(false);
     }
 
-    public IEnumerator LoadGameObjetFromAB(FileURL _fileURL, List<string> _GameObjectNames)
+    public IEnumerator LoadGameObjetFromAB(FileURL _fileURL, List<ObjectNamePosition> _GameObjDesc)
     {
+        bool loadingGO = true;
+
         yield return StartCoroutine(CoreABDownloader(
             _fileURL,
             (UnityWebRequest _uwr) => {
 
-                tmpAB = DownloadHandlerAssetBundle.GetContent(_uwr);
-                SpriteAtlasManager.atlasRequested += RequestLateBindingAtlas;
+                StartCoroutine(AsyncLoadGameObjectsFromAB( _uwr, _GameObjDesc,
+                    () => { loadingGO = false; }
+                    )
+                );
 
-                // Instantiate each GO
-                for (int i = 0; i < _GameObjectNames.Count; i++)
-                {
-                    var tarGo = tmpAB.LoadAsset<GameObject>(_GameObjectNames[i]);
-                    Instantiate(tarGo as GameObject);
-                }
-
-                SpriteAtlasManager.atlasRequested -= RequestLateBindingAtlas;
-                tmpSA = null;
             },
             null,
             null
             ));
+
+        while (loadingGO)
+            yield return null;
+
+        Debug.Log("LoadGameObjetFromAB Finished");
     }
 
-    /// <summary>
-    /// Wrapper of CoreABDownloader, grap texture from AB
-    /// </summary>
-    /// <param name="_fileURL"></param>
-    /// <param name="_textureName"></param>
-    /// <returns></returns>
-    public IEnumerator LoadTextureFromAB(FileURL _fileURL, string _textureName)
+    public IEnumerator LoadTextureFromAB(FileURL _fileURL, params string[] _textureNames)
     {
+        bool loadingTexture = true;
+        var result = new List<UnityEngine.Object>();
         // Check AB already in Disk
         yield return StartCoroutine(CoreABDownloader(
             _fileURL,
             (UnityWebRequest _uwr) => {
-                AssetBundle ab = DownloadHandlerAssetBundle.GetContent(_uwr);
-                if (ab != null)
-                    tmpTexture = ab.LoadAsset<Texture2D>(_textureName);
-                ab.Unload(false);
+                StartCoroutine(AsyncLoadFromAB<Texture>(_uwr,
+                    (List<UnityEngine.Object> _txts) =>
+                    {
+                        loadingTexture = false;
+                        result = _txts;
+                    },
+                    _textureNames
+                ));
             },
             null,
             null
             ));
+
+        while (loadingTexture)
+            yield return null;
+
+        yield return null;
+
+        Debug.Log("Load Textures Finished");
     }
-    #endregion    
+
+    public IEnumerator LoadSpriteAtlasFromAB(FileURL _fileURL, string _spriteAltasName)
+    {
+        bool loadingSA = true;
+
+        // Check AB already in Disk
+        yield return StartCoroutine(CoreABDownloader(
+            _fileURL,
+            (UnityWebRequest _uwr) => 
+            {
+                StartCoroutine(AsyncLoadSpriteAtlasFromAB(_uwr, 
+                    _spriteAltasName, 
+                    ()=> 
+                    {
+                        loadingSA = false;
+                    }
+                ));
+            },
+            null,
+            null
+            ));
+
+        while (loadingSA)
+            yield return null;
+
+        Debug.Log("LoadSpriteAtlasFromAB Finished");
+    }
+    #endregion
+
+    #region Async Load From AB
+    IEnumerator AsyncLoadGameObjectsFromAB(UnityWebRequest _uwr, List<ObjectNamePosition> _GODescription, Action _end)
+    {
+        AssetBundle ab = DownloadHandlerAssetBundle.GetContent(_uwr);
+        if (ab != null)
+        {
+            tmpAB = ab;
+            SpriteAtlasManager.atlasRequested += RequestLateBindingAtlas;
+
+            // Instantiate each GO
+            for (int i = 0; i < _GODescription.Count; i++)
+            {
+
+                var abr = ab.LoadAsset<GameObject>(_GODescription[i].name);
+                yield return abr;
+
+                var go = Instantiate(abr, _GODescription[i].position, Quaternion.identity);
+                yield return null;
+            }
+
+            SpriteAtlasManager.atlasRequested -= RequestLateBindingAtlas;
+            tmpSA = null;
+            tmpAB = null;
+            yield return null;
+
+            ab.Unload(false);
+        }
+        _end();
+    }
+
+    IEnumerator AsyncLoadSpriteAtlasFromAB(UnityWebRequest _uwr, string _spriteAltasName, Action _end)
+    {
+        AssetBundle ab = DownloadHandlerAssetBundle.GetContent(_uwr);
+        if (ab != null)
+        {
+            var abr = ab.LoadAssetAsync<SpriteAtlas>(_spriteAltasName);
+            yield return abr;
+            tmpSA = abr.asset as SpriteAtlas;
+
+            yield return null;
+
+            ab.Unload(false);
+        }
+        _end();
+    }
+
+    //IEnumerator AsyncLoadTextureFromAB(UnityWebRequest _uwr, Action<List<Texture>> _end, params string[] _textureNames)
+    //{
+
+    //    var result = new List<Texture>();
+
+    //    AssetBundle ab = DownloadHandlerAssetBundle.GetContent(_uwr);
+    //    if (ab != null)
+    //    {
+    //        for (int i = 0; i < _textureNames.Length; i++)
+    //        {
+    //            var abr = ab.LoadAssetAsync<Texture2D>(_textureNames[i]);
+    //            yield return abr;
+
+    //            if (abr.asset != null)
+    //                result.Add(abr.asset as Texture2D);
+    //        }
+            
+    //        yield return null;
+
+    //        ab.Unload(false);
+    //    }
+
+    //    _end(result);
+    //}
+
+    IEnumerator AsyncLoadFromAB<T>(UnityWebRequest _uwr, Action<List<UnityEngine.Object>> _end, params string[] _Names)
+    {
+        var result = new List<UnityEngine.Object>();
+
+        AssetBundle ab = DownloadHandlerAssetBundle.GetContent(_uwr);
+        if (ab != null)
+        {
+            for (int i = 0; i < _Names.Length; i++)
+            {
+                var abr = ab.LoadAssetAsync<T>(_Names[i]);
+                yield return abr;
+
+                if (abr.asset != null)                   
+                    result.Add(abr.asset);
+            }
+
+            yield return null;
+
+            ab.Unload(false);
+        }
+
+        _end(result);
+
+        yield return null;
+    }
+    #endregion
 
     #region TWO Core Downloader
     /// <summary>
@@ -246,6 +384,13 @@ public class AssetBundleKeeper : MonoBehaviour
         return true;
     }
     #endregion
+}
+
+[Serializable]
+public class ObjectNamePosition
+{
+    public string name;
+    public Vector3 position;
 }
 
 [Serializable]
