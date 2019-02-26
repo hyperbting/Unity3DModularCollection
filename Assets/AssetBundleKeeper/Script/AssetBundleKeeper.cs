@@ -97,15 +97,23 @@ public class AssetBundleKeeper : MonoBehaviour
     {
         bool loadingGO = true;
 
+        var nameArr = new string[_GameObjDesc.Count];
+        for (int i = 0; i < _GameObjDesc.Count; i++)
+            nameArr[i] = _GameObjDesc[i].name;
+
         yield return StartCoroutine(CoreABDownloader(
             _fileURL,
             (UnityWebRequest _uwr) => {
+                StartCoroutine(AsyncLoadFromAB<GameObject>(_uwr,
+                    (List<UnityEngine.Object> _objs) =>
+                    {
+                        for (int i = 0; i < _objs.Count; i++)
+                            Instantiate((_objs[i] as GameObject), _GameObjDesc[i].position, Quaternion.identity);
 
-                StartCoroutine(AsyncLoadGameObjectsFromAB( _uwr, _GameObjDesc,
-                    () => { loadingGO = false; }
-                    )
-                );
-
+                        loadingGO = false;
+                    },
+                    nameArr
+                ));
             },
             null,
             null
@@ -120,7 +128,7 @@ public class AssetBundleKeeper : MonoBehaviour
     public IEnumerator LoadTextureFromAB(FileURL _fileURL, params string[] _textureNames)
     {
         bool loadingTexture = true;
-        var result = new List<UnityEngine.Object>();
+        var result = new List<Texture2D>();
         // Check AB already in Disk
         yield return StartCoroutine(CoreABDownloader(
             _fileURL,
@@ -128,8 +136,10 @@ public class AssetBundleKeeper : MonoBehaviour
                 StartCoroutine(AsyncLoadFromAB<Texture>(_uwr,
                     (List<UnityEngine.Object> _txts) =>
                     {
+                        for (int i = 0; i < _txts.Count; i++)
+                            result.Add(_txts[i] as Texture2D);
+
                         loadingTexture = false;
-                        result = _txts;
                     },
                     _textureNames
                 ));
@@ -150,17 +160,20 @@ public class AssetBundleKeeper : MonoBehaviour
     {
         bool loadingSA = true;
 
+        SpriteAtlas mySA;
+
         // Check AB already in Disk
         yield return StartCoroutine(CoreABDownloader(
             _fileURL,
-            (UnityWebRequest _uwr) => 
-            {
-                StartCoroutine(AsyncLoadSpriteAtlasFromAB(_uwr, 
-                    _spriteAltasName, 
-                    ()=> 
+            (UnityWebRequest _uwr) => {
+
+                StartCoroutine(AsyncLoadFromAB<SpriteAtlas>(_uwr,
+                    (List<UnityEngine.Object> _objs) =>
                     {
+                        mySA = _objs[0] as SpriteAtlas;
                         loadingSA = false;
-                    }
+                    },
+                    _spriteAltasName
                 ));
             },
             null,
@@ -175,76 +188,14 @@ public class AssetBundleKeeper : MonoBehaviour
     #endregion
 
     #region Async Load From AB
-    IEnumerator AsyncLoadGameObjectsFromAB(UnityWebRequest _uwr, List<ObjectNamePosition> _GODescription, Action _end)
-    {
-        AssetBundle ab = DownloadHandlerAssetBundle.GetContent(_uwr);
-        if (ab != null)
-        {
-            tmpAB = ab;
-            SpriteAtlasManager.atlasRequested += RequestLateBindingAtlas;
-
-            // Instantiate each GO
-            for (int i = 0; i < _GODescription.Count; i++)
-            {
-
-                var abr = ab.LoadAsset<GameObject>(_GODescription[i].name);
-                yield return abr;
-
-                var go = Instantiate(abr, _GODescription[i].position, Quaternion.identity);
-                yield return null;
-            }
-
-            SpriteAtlasManager.atlasRequested -= RequestLateBindingAtlas;
-            tmpSA = null;
-            tmpAB = null;
-            yield return null;
-
-            ab.Unload(false);
-        }
-        _end();
-    }
-
-    IEnumerator AsyncLoadSpriteAtlasFromAB(UnityWebRequest _uwr, string _spriteAltasName, Action _end)
-    {
-        AssetBundle ab = DownloadHandlerAssetBundle.GetContent(_uwr);
-        if (ab != null)
-        {
-            var abr = ab.LoadAssetAsync<SpriteAtlas>(_spriteAltasName);
-            yield return abr;
-            tmpSA = abr.asset as SpriteAtlas;
-
-            yield return null;
-
-            ab.Unload(false);
-        }
-        _end();
-    }
-
-    //IEnumerator AsyncLoadTextureFromAB(UnityWebRequest _uwr, Action<List<Texture>> _end, params string[] _textureNames)
-    //{
-
-    //    var result = new List<Texture>();
-
-    //    AssetBundle ab = DownloadHandlerAssetBundle.GetContent(_uwr);
-    //    if (ab != null)
-    //    {
-    //        for (int i = 0; i < _textureNames.Length; i++)
-    //        {
-    //            var abr = ab.LoadAssetAsync<Texture2D>(_textureNames[i]);
-    //            yield return abr;
-
-    //            if (abr.asset != null)
-    //                result.Add(abr.asset as Texture2D);
-    //        }
-            
-    //        yield return null;
-
-    //        ab.Unload(false);
-    //    }
-
-    //    _end(result);
-    //}
-
+    /// <summary>
+    /// Load specific Type T By Name _Names
+    /// </summary>
+    /// <typeparam name="T">Specific type to load</typeparam>
+    /// <param name="_uwr"></param>
+    /// <param name="_end">What to do for these loaded objects</param>
+    /// <param name="_Names">Names of Specific type object</param>
+    /// <returns></returns>
     IEnumerator AsyncLoadFromAB<T>(UnityWebRequest _uwr, Action<List<UnityEngine.Object>> _end, params string[] _Names)
     {
         var result = new List<UnityEngine.Object>();
@@ -252,6 +203,9 @@ public class AssetBundleKeeper : MonoBehaviour
         AssetBundle ab = DownloadHandlerAssetBundle.GetContent(_uwr);
         if (ab != null)
         {
+            tmpAB = ab;
+            SpriteAtlasManager.atlasRequested += RequestLateBindingAtlas;
+
             for (int i = 0; i < _Names.Length; i++)
             {
                 var abr = ab.LoadAssetAsync<T>(_Names[i]);
@@ -267,6 +221,10 @@ public class AssetBundleKeeper : MonoBehaviour
         }
 
         _end(result);
+
+        SpriteAtlasManager.atlasRequested -= RequestLateBindingAtlas;
+        tmpSA = null;
+        tmpAB = null;
 
         yield return null;
     }

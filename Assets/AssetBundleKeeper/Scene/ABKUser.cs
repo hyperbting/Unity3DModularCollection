@@ -40,6 +40,8 @@ public class ABKUser : MonoBehaviour {
         "IconSA"// SA Name
         ));
 
+        Debug.Log("IconSA Finished");
+
         //LoadSpriteAtlasFromAB
         yield return StartCoroutine(myABK.LoadTextureFromAB(new FileURL()
         {
@@ -48,6 +50,8 @@ public class ABKUser : MonoBehaviour {
         },
         "round_alternate_email_black_48dp" // Texture Names
         ));
+
+        Debug.Log("round_alternate_email_black_48dp Finished");
 
         //LoadGameObjectFromAB
         yield return StartCoroutine(myABK.LoadGameObjetFromAB(new FileURL()
@@ -61,6 +65,8 @@ public class ABKUser : MonoBehaviour {
         } // List of ObjectNamePosition
         ));
 
+        Debug.Log("Cube Finished");
+
         //Load Textures FromAB
         yield return StartCoroutine(myABK.LoadTextureFromAB(new FileURL()
         {
@@ -69,5 +75,7 @@ public class ABKUser : MonoBehaviour {
         },
         new string[]{ "baseline_3d_rotation_black_18dp", "round_alternate_email_black_48dp" } // ObjectNamePositions
         ));
+
+        Debug.Log("baseline_3d_rotation_black_18dp  round_alternate_email_black_48dp Finished");
     }
 }
