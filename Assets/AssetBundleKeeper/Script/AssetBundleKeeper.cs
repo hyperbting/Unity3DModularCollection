@@ -93,7 +93,7 @@ public class AssetBundleKeeper : MonoBehaviour
         manifestBundle.Unload(false);
     }
 
-    public IEnumerator LoadGameObjetFromAB(FileURL _fileURL, List<ObjectNamePosition> _GameObjDesc)
+    public IEnumerator LoadGameObjetFromAB(ABFileURL _fileURL, List<ObjectNamePosition> _GameObjDesc)
     {
         bool loadingGO = true;
 
@@ -125,10 +125,9 @@ public class AssetBundleKeeper : MonoBehaviour
         Debug.Log("LoadGameObjetFromAB Finished");
     }
 
-    public IEnumerator LoadTextureFromAB(FileURL _fileURL, params string[] _textureNames)
+    public IEnumerator LoadTextureFromAB(ABFileURL _fileURL, Action<List<Texture2D>> _textureDealer, params string[] _textureNames)
     {
         bool loadingTexture = true;
-        var result = new List<Texture2D>();
         // Check AB already in Disk
         yield return StartCoroutine(CoreABDownloader(
             _fileURL,
@@ -136,9 +135,10 @@ public class AssetBundleKeeper : MonoBehaviour
                 StartCoroutine(AsyncLoadFromAB<Texture>(_uwr,
                     (List<UnityEngine.Object> _txts) =>
                     {
+                        var result = new List<Texture2D>();
                         for (int i = 0; i < _txts.Count; i++)
                             result.Add(_txts[i] as Texture2D);
-
+                        _textureDealer(result);
                         loadingTexture = false;
                     },
                     _textureNames
@@ -151,29 +151,27 @@ public class AssetBundleKeeper : MonoBehaviour
         while (loadingTexture)
             yield return null;
 
-        yield return null;
-
         Debug.Log("Load Textures Finished");
     }
 
-    public IEnumerator LoadSpriteAtlasFromAB(FileURL _fileURL, string _spriteAltasName)
+    public IEnumerator LoadSpriteAtlasFromAB(ABFileURL _fileURL, Action<List<SpriteAtlas>> _saDealer, params string[] _spriteAltasNames)
     {
         bool loadingSA = true;
-
-        SpriteAtlas mySA;
-
         // Check AB already in Disk
         yield return StartCoroutine(CoreABDownloader(
             _fileURL,
             (UnityWebRequest _uwr) => {
-
                 StartCoroutine(AsyncLoadFromAB<SpriteAtlas>(_uwr,
                     (List<UnityEngine.Object> _objs) =>
                     {
-                        mySA = _objs[0] as SpriteAtlas;
+                        var sas = new List<SpriteAtlas>();
+                        for(int i = 0; i < _objs.Count; i++)
+                            sas.Add( _objs[i] as SpriteAtlas);
+
+                        _saDealer(sas);
                         loadingSA = false;
                     },
-                    _spriteAltasName
+                    _spriteAltasNames
                 ));
             },
             null,
@@ -239,7 +237,7 @@ public class AssetBundleKeeper : MonoBehaviour
     /// <param name="_success"></param>
     /// <param name="_fail"></param>
     /// <param name="_progress"></param>
-    IEnumerator CoreABDownloader(FileURL _fileURL, Action<UnityWebRequest> _success=null, Action<string> _fail=null, Action<float> _progress=null)
+    IEnumerator CoreABDownloader(ABFileURL _fileURL, Action<UnityWebRequest> _success=null, Action<string> _fail=null, Action<float> _progress=null)
     {
         if (myABM == null)
             Debug.LogError("ABM not loaded!");
@@ -352,7 +350,7 @@ public class ObjectNamePosition
 }
 
 [Serializable]
-public class FileURL
+public struct ABFileURL
 {
     /// <summary>
     /// file url, including filename and file extension
@@ -361,15 +359,28 @@ public class FileURL
 
     public string fileName;
 
+    public override string ToString()
+    {
+        return fullURL;
+    }
+}
+
+[Serializable]
+public class FileURL
+{
+    /// <summary>
+    /// file url, including filename and file extension
+    /// </summary>
+    public string fullURL;
+
     /// <summary>
     /// if this file have to save to disk
     /// </summary>
     public string localPath;
 
-    public void Setup(string _baseurl, string _platform, string _localPath)
+    public void Setup(string _baseurl, string _platform, string _fileName, string _localPath)
     {
-        fullURL = _baseurl + _platform + "/" + _platform;
-        fileName = _platform;
+        fullURL = _baseurl + _platform + "/" + _fileName;
         localPath = _localPath;
     }
 

@@ -14,7 +14,6 @@ public class ABKUser : MonoBehaviour {
         myABK.ABM_PATH = new FileURL()
         {
             fullURL = "https://s3-ap-northeast-1.amazonaws.com/hooloopplayground/" + SystemInfoChecker.GetPlatformName() + "/"  + SystemInfoChecker.GetPlatformName(),
-            fileName = SystemInfoChecker.GetPlatformName(),
             localPath = Application.persistentDataPath+"/ABM"
         };
 
@@ -32,10 +31,14 @@ public class ABKUser : MonoBehaviour {
             Debug.Log(name);
 
         //LoadSpriteAtlasFromAB
-        yield return StartCoroutine(myABK.LoadSpriteAtlasFromAB(new FileURL()
+        yield return StartCoroutine(myABK.LoadSpriteAtlasFromAB(new ABFileURL()
         {
             fullURL = "https://s3-ap-northeast-1.amazonaws.com/hooloopplayground/" + SystemInfoChecker.GetPlatformName() + "/icons",
             fileName = "icons"
+        },
+        (List<UnityEngine.U2D.SpriteAtlas> _sas) =>
+        {
+
         },
         "IconSA"// SA Name
         ));
@@ -43,10 +46,14 @@ public class ABKUser : MonoBehaviour {
         Debug.Log("IconSA Finished");
 
         //LoadSpriteAtlasFromAB
-        yield return StartCoroutine(myABK.LoadTextureFromAB(new FileURL()
+        yield return StartCoroutine(myABK.LoadTextureFromAB(new ABFileURL()
         {
             fullURL = "https://s3-ap-northeast-1.amazonaws.com/hooloopplayground/" + SystemInfoChecker.GetPlatformName() + "/icons",
             fileName = "icons"
+        },
+        (List<Texture2D> _textures) =>
+        {
+
         },
         "round_alternate_email_black_48dp" // Texture Names
         ));
@@ -54,7 +61,7 @@ public class ABKUser : MonoBehaviour {
         Debug.Log("round_alternate_email_black_48dp Finished");
 
         //LoadGameObjectFromAB
-        yield return StartCoroutine(myABK.LoadGameObjetFromAB(new FileURL()
+        yield return StartCoroutine(myABK.LoadGameObjetFromAB(new ABFileURL()
         {
             fullURL = "https://s3-ap-northeast-1.amazonaws.com/hooloopplayground/" + SystemInfoChecker.GetPlatformName() + "/tester001",
             fileName = "tester001"
@@ -68,10 +75,14 @@ public class ABKUser : MonoBehaviour {
         Debug.Log("Cube Finished");
 
         //Load Textures FromAB
-        yield return StartCoroutine(myABK.LoadTextureFromAB(new FileURL()
+        yield return StartCoroutine(myABK.LoadTextureFromAB(new ABFileURL()
         {
             fullURL = "https://s3-ap-northeast-1.amazonaws.com/hooloopplayground/" + SystemInfoChecker.GetPlatformName() + "/icons",
             fileName = "icons"
+        },
+        (List<Texture2D> _textures) =>
+        {
+
         },
         new string[]{ "baseline_3d_rotation_black_18dp", "round_alternate_email_black_48dp" } // ObjectNamePositions
         ));
