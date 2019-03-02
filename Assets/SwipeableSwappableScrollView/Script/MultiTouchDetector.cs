@@ -9,7 +9,7 @@ public class MultiTouchDetector : Selectable, IBeginDragHandler, IDragHandler, I
     public RectTransform BtnHolder;
 
     [Header("Single/Swipe Setting")]
-    [Tooltip("min pixel to open side tab")]
+    [Tooltip("min pixel to become Swipe/Scroll")]
     [Range(6f, 60f)]
     public float minPixelToOpenTab = 6f;
 
@@ -20,10 +20,13 @@ public class MultiTouchDetector : Selectable, IBeginDragHandler, IDragHandler, I
     [Range(10f, 100f)]
     public float sideTabMovementPerFrame = 10f;
 
-    public DragnDropHelper myDnDHelper;
+    //public DragnDropHelper myDnDHelper;
 
     #region Debug
     [Header("Debug Purpose")]
+    [SerializeField]
+    private TouchBoardStatus myBoardStatus ;
+
     [SerializeField]
     [Tooltip("As long as it shows one pixel, it is marked as OPENED")]
     private bool swipeOpened = false;
@@ -60,10 +63,12 @@ public class MultiTouchDetector : Selectable, IBeginDragHandler, IDragHandler, I
     #region Pointer
     public override void OnPointerDown(PointerEventData eventData)
     {
+        myBoardStatus = TouchBoardStatus.SingleClick;
+
         btnHolderWidth = BtnHolder.sizeDelta.x;
         widthToOpen = -btnHolderWidth * ratioToOpen;
 
-        myDnDHelper.OnBtnPointerDown();
+        //myDnDHelper.OnBtnPointerDown();
 
         base.OnPointerDown(eventData);
     }
@@ -71,9 +76,8 @@ public class MultiTouchDetector : Selectable, IBeginDragHandler, IDragHandler, I
     //Detect if clicks are no longer registering
     public override void OnPointerUp(PointerEventData pointerEventData)
     {
-        CancelInvoke("SetToDnDMode");
-
-        myDnDHelper.OnBtnPointerUp();
+        //CancelInvoke("SetToDnDMode");
+        //myDnDHelper.OnBtnPointerUp();
 
         Debug.Log(name + " No longer being clicked " + acuumlatedSwipePixel.x + " " +  minPixelToOpenTab);
 
@@ -99,11 +103,11 @@ public class MultiTouchDetector : Selectable, IBeginDragHandler, IDragHandler, I
     //private float beginDragTime;
     public void OnBeginDrag(PointerEventData eventData)
     {
-        myDnDHelper.CancelCountDownInvoke();
-        if (myDnDHelper.dragnDropMode)
-            return;
+        //myDnDHelper.CancelCountDownInvoke();
+        //if (myDnDHelper.dragnDropMode)
+        //    return;
 
-        //Debug.Log("OnBeginDrag" + eventData);
+        Debug.Log("OnBeginDrag:" + eventData);
         ResetData();
 
         myScrollRect.OnBeginDrag(eventData);
@@ -111,44 +115,83 @@ public class MultiTouchDetector : Selectable, IBeginDragHandler, IDragHandler, I
 
     public void OnDrag(PointerEventData data)
     {
-        if (myDnDHelper.dragnDropMode)
-            return;
+        //if (myDnDHelper.dragnDropMode)
+        //    return;
 
-        Debug.Log("OnDrag" + data);
+        //Debug.Log("OnDrag:" + data);
 
         acuumlatedSwipePixel.x += Mathf.Abs(data.delta.x);
         acuumlatedSwipePixel.y += Mathf.Abs(data.delta.y);
 
-        if (acuumlatedSwipePixel.x > acuumlatedSwipePixel.y)
+        ////Determine whether stay in CLICK or Swipe/ Scroll Mode
+        if (myBoardStatus == TouchBoardStatus.SingleClick)
         {
-            MoveBtnHolder(data.delta.x);
-        }
-        else
-        {
-            ///Set the drag target to ScrollRect
             data.eligibleForClick = false;
-            data.pointerDrag = myScrollRect.gameObject;
 
-            DetermineSwipeResult();
+            if (acuumlatedSwipePixel.x > acuumlatedSwipePixel.y)
+                myBoardStatus = TouchBoardStatus.SwipeMenu;
+            else
+            {
+                myBoardStatus = TouchBoardStatus.Scroll;
+                data.pointerDrag = myScrollRect.gameObject;
+            }
         }
+
+        //if (acuumlatedSwipePixel.x > acuumlatedSwipePixel.y)
+        //{
+        //    MoveBtnHolder(data.delta.x);
+        //}
+        //else
+        //{
+        //    ///Set the drag target to ScrollRect
+        //    if(myBoardStatus == TouchBoardStatus.SingleClick)
+        //        myBoardStatus = TouchBoardStatus.Scroll;
+
+        //    data.eligibleForClick = false;
+        //    data.pointerDrag = myScrollRect.gameObject;
+
+        //    DetermineSwipeResult();
+        //}
+
+        switch (myBoardStatus)
+        {
+            case TouchBoardStatus.Scroll:
+                // show other MultiTouchDetectors
+                DetermineSwipeResult();
+                break;
+            case TouchBoardStatus.SwipeMenu:
+                // show hidden menu
+                MoveBtnHolder(data.delta.x);
+                break;
+            case TouchBoardStatus.LongPress:
+            case TouchBoardStatus.SingleClick:
+            case TouchBoardStatus.Unknown:
+            default:
+                // do nothing on DRAG
+                Debug.Log("Drag in Other Status:" + myBoardStatus);
+                break;
+        }
+
     }
 
     public void OnEndDrag(PointerEventData eventData)
     {
-        if (myDnDHelper.dragnDropMode)
-            return;
+        //if (myDnDHelper.dragnDropMode)
+        //    return;
 
-        Debug.Log("OnEndDrag" + eventData);
-        if (acuumlatedSwipePixel.x < minPixelToOpenTab)
-        {
-            //// IsClick
-            OnPointerUp(eventData);
-        }
-        else
-        {
-            /// IsSwipe
-            DetermineSwipeResult();
-        }
+        Debug.Log("OnEndDrag:" + eventData);
+        //if (acuumlatedSwipePixel.x < minPixelToOpenTab)
+        //{
+        //    //// IsClick
+        //    OnPointerUp(eventData);
+        //}
+        //else
+        //{
+        //    /// IsSwipe
+        //    DetermineSwipeResult();
+        //}
+
+        DetermineSwipeResult();
     }
     #endregion
 
@@ -199,4 +242,13 @@ public class MultiTouchDetector : Selectable, IBeginDragHandler, IDragHandler, I
             //    });
         }
     }
+}
+
+public enum TouchBoardStatus
+{
+    Unknown,
+    SingleClick,
+    SwipeMenu,
+    Scroll,
+    LongPress
 }

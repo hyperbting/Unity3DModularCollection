@@ -277,13 +277,13 @@ MonoBehaviour:
   ratioToOpen: 0.4
   AnimDuration: 0.5
   sideTabMovementPerFrame: 10
-  secondToDnDMode: 1
+  myDnDHelper: {fileID: 0}
+  myBoardStatus: 0
   swipeOpened: 1
   btnHolderWidth: 200
   widthToOpen: -80
   acuumlatedSwipePixel: {x: 4.485962, y: 4.486023}
   myScrollRect: {fileID: 0}
-  dragnDropMode: 1
 --- !u!222 &222002240587773402
 CanvasRenderer:
   m_ObjectHideFlags: 1
