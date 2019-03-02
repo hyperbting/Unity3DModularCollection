@@ -273,10 +273,11 @@ MonoBehaviour:
   m_Interactable: 1
   m_TargetGraphic: {fileID: 114188552793359878}
   BtnHolder: {fileID: 224334698232758720}
-  minPixelToOpenTab: 6
+  minPixelLeaveClick: 60
   ratioToOpen: 0.4
   AnimDuration: 0.5
   sideTabMovementPerFrame: 10
+  myDnDHelper: {fileID: 0}
   myBoardStatus: 0
   swipeOpened: 1
   btnHolderWidth: 200

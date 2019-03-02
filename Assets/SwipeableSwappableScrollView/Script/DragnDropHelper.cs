@@ -1,44 +1,52 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 public class DragnDropHelper : MonoBehaviour
 {
-
     [Header("DragnDrop Setting")]
     public ScrollRect scrollRect;
 
     [Range(0.5f, 2f)]
     public float secondToDnDMode = 1f;
 
-    public bool dragnDropMode = false;
-
-    public void OnBtnPointerUp()
+    private UnityAction onLongPressed;
+    public void OnBtnPointerDown(UnityAction _onLongPressed)
     {
-        CancelInvoke("SetToDnDMode");
-        if (dragnDropMode)
-        {
-            //scrollRect.enabled = true;
-        }
+        onLongPressed = _onLongPressed;
+
+        //CountDown to Set
+        Invoke("SetToDnDMode", secondToDnDMode);
     }
 
-    public void OnBtnPointerDown()
+    public void OnBtnPointerUp(TouchBoardStatus _endStatus)
     {
-        dragnDropMode = false;
+        CancelCountDownInvoke();
 
-        Invoke("SetToDnDMode", secondToDnDMode);
+        if (_endStatus == TouchBoardStatus.LongPress)
+        {
+            //TODO: swap here?
+        }
     }
 
     public void CancelCountDownInvoke()
     {
+        scrollRect.enabled = true;
         CancelInvoke("SetToDnDMode");
+        onLongPressed = null;
     }
 
     void SetToDnDMode()
     {
-        dragnDropMode = true;
-        //myScrollRect.enabled = false;
+        Debug.Log("isLongPressed");
+
+        if (onLongPressed != null)
+            onLongPressed();
+
+        //Lock scroll
+        scrollRect.enabled = false;
 
         //var holding = EventSystem.current.currentSelectedGameObject.GetComponent<MultiTouchDetector>();
         //if (holding != null)

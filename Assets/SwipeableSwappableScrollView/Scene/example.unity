@@ -336,6 +336,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   myScrollRect: {fileID: 842486237}
+  myDnDHelper: {fileID: 842486238}
   itemPrefab: {fileID: 114944284465702754, guid: 58270f68063327a47b7104e46c7e5ef8,
     type: 2}
   contentHolder: {fileID: 982009430}

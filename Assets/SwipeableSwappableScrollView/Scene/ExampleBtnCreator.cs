@@ -7,6 +7,7 @@ using UnityEngine.UI;
 public class ExampleBtnCreator : MonoBehaviour
 {
     public ScrollRect myScrollRect;
+    public DragnDropHelper myDnDHelper;
     public MultiTouchDetector itemPrefab;
     public RectTransform contentHolder;
 
@@ -18,7 +19,7 @@ public class ExampleBtnCreator : MonoBehaviour
         {
             var script = Instantiate(itemPrefab, contentHolder);
             script.gameObject.name = i.ToString();
-            script.Init(myScrollRect, ()=> { Debug.Log(i + " is Cliecked!"); });
+            script.Init(myScrollRect, myDnDHelper, ()=> { Debug.Log(i + " is Cliecked!"); });
         }
     }
 }
