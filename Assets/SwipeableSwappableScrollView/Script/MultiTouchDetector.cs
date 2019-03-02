@@ -58,7 +58,7 @@ public class MultiTouchDetector : Selectable, IBeginDragHandler, IDragHandler, I
         myOnClicked = _onClicked;
     }
 
-    void ResetData()
+    void ResetPointerMovementData()
     {
         acuumlatedSwipePixel = Vector2.zero;
     }
@@ -119,7 +119,7 @@ public class MultiTouchDetector : Selectable, IBeginDragHandler, IDragHandler, I
     public void OnBeginDrag(PointerEventData eventData)
     {
         //Debug.Log("OnBeginDrag:" + eventData);
-        ResetData();
+        ResetPointerMovementData();
     }
 
     public void OnDrag(PointerEventData data)
@@ -182,28 +182,31 @@ public class MultiTouchDetector : Selectable, IBeginDragHandler, IDragHandler, I
     /// <param name="_data"></param>
     public void DetermineClickOrDrag(PointerEventData _data)
     {
+        // do nothing if in status LongPress/ SwipeMenu/ Scroll
         if (myBoardStatus != TouchBoardStatus.SingleClick)
             return;
 
-        // if move too little ignore it!
+        // if total movement too little, ignore it!
         if (acuumlatedSwipePixel.magnitude < minPixelLeaveClick)
             return;
 
         //cancel Long Press CountDown!
         myDnDHelper.CancelCountDownInvoke();
 
-        Debug.Log("Drag/Scroll");
+        //Debug.Log("Drag/ Scroll");
         _data.eligibleForClick = false;
 
+        // Left or Right
         if (acuumlatedSwipePixel.x > acuumlatedSwipePixel.y)
         {
             myBoardStatus = TouchBoardStatus.SwipeMenu;
             return;
         }
 
+        // Up or Down
         myBoardStatus = TouchBoardStatus.Scroll;
 
-        //Delayed Setup from OnBeginDrag
+        //Delayed Scrolling Setup from OnBeginDrag
         myScrollRect.OnBeginDrag(_data);
         _data.pointerDrag = myScrollRect.gameObject;
     }
