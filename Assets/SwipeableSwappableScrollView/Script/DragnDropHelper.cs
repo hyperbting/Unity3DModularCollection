@@ -13,29 +13,32 @@ public class DragnDropHelper : MonoBehaviour
     public float secondToDnDMode = 1f;
 
     private UnityAction onLongPressed;
+
+    public void Reset()
+    {
+        scrollRect.enabled = true;
+        onLongPressed = null;
+    }
+
     public void OnBtnPointerDown(UnityAction _onLongPressed)
     {
+        Reset();
+
         onLongPressed = _onLongPressed;
 
         //CountDown to Set
         Invoke("SetToDnDMode", secondToDnDMode);
     }
 
-    public void OnBtnPointerUp(TouchBoardStatus _endStatus)
+    public void OnBtnPointerUp()
     {
-        CancelCountDownInvoke();
-
-        if (_endStatus == TouchBoardStatus.LongPress)
-        {
-            //TODO: swap here?
-        }
+        //TODO: swap here?
+        Reset();
     }
 
     public void CancelCountDownInvoke()
     {
-        scrollRect.enabled = true;
         CancelInvoke("SetToDnDMode");
-        onLongPressed = null;
     }
 
     void SetToDnDMode()
