@@ -23,7 +23,7 @@ GameObject:
   - component: {fileID: 114188552793359878}
   - component: {fileID: 114944284465702754}
   m_Layer: 5
-  m_Name: Panel
+  m_Name: Item
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -277,7 +277,6 @@ MonoBehaviour:
   ratioToOpen: 0.4
   AnimDuration: 0.5
   sideTabMovementPerFrame: 10
-  myDnDHelper: {fileID: 0}
   myBoardStatus: 0
   swipeOpened: 1
   btnHolderWidth: 200
