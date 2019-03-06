@@ -154,28 +154,24 @@ public class AssetBundleKeeper : MonoBehaviour
         Debug.Log("Load Textures Finished");
     }
 
-    public IEnumerator LoadSpriteAtlasFromAB(ABFileURL _fileURL, Action<List<SpriteAtlas>> _saDealer, params string[] _spriteAltasNames)
+    public IEnumerator LoadSpriteAtlasFromAB(ABFileURL _fileURL, Action<SpriteAtlas> _saDealer, string _spriteAltasName)
     {
         bool loadingSA = true;
         // Check AB already in Disk
         yield return StartCoroutine(CoreABDownloader(
             _fileURL,
             (UnityWebRequest _uwr) => {
-                StartCoroutine(AsyncLoadFromAB<SpriteAtlas>(_uwr,
-                    (List<UnityEngine.Object> _objs) =>
+                StartCoroutine(AsyncLoadSAFromAB(_uwr,
+                    (SpriteAtlas _sa) =>
                     {
-                        var sas = new List<SpriteAtlas>();
-                        for(int i = 0; i < _objs.Count; i++)
-                            sas.Add( _objs[i] as SpriteAtlas);
-
-                        _saDealer(sas);
+                        _saDealer(_sa);
                         loadingSA = false;
                     },
-                    _spriteAltasNames
+                    _spriteAltasName
                 ));
             },
-            null,
-            null
+            null,// fail
+            null // progress
             ));
 
         while (loadingSA)
@@ -221,7 +217,38 @@ public class AssetBundleKeeper : MonoBehaviour
         _end(result);
 
         SpriteAtlasManager.atlasRequested -= RequestLateBindingAtlas;
+
+        if (tmpSA != null)
+            DestroyImmediate(tmpSA, true);
         tmpSA = null;
+
+        tmpAB = null;
+
+        yield return null;
+    }
+
+    IEnumerator AsyncLoadSAFromAB(UnityWebRequest _uwr, Action<SpriteAtlas> _end, string _spriteAtlasName)
+    {
+        SpriteAtlas result = null;
+
+        AssetBundle ab = DownloadHandlerAssetBundle.GetContent(_uwr);
+        if (ab != null)
+        {
+            tmpAB = ab;
+
+            var abr = ab.LoadAssetAsync<SpriteAtlas>(_spriteAtlasName);
+            yield return abr;
+
+            if (abr.asset != null)
+                result = abr.asset as SpriteAtlas;
+
+            yield return null;
+
+            ab.Unload(false);
+        }
+
+        _end(result);
+
         tmpAB = null;
 
         yield return null;

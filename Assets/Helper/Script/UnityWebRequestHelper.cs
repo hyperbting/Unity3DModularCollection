@@ -151,7 +151,7 @@ public class UnityWebRequestHelper: MonoBehaviour {
         }
     }
 
-    public IEnumerator CheckInternetConnection(string _url, Action<bool> _successAct)
+    public IEnumerator CheckInternetConnection(string _url, Action<bool> _successAct=null)
     {
         using (UnityWebRequest uwr = UnityWebRequest.Get(_url))
         {
@@ -161,12 +161,14 @@ public class UnityWebRequestHelper: MonoBehaviour {
             if (uwr.isNetworkError || uwr.isHttpError)
             {
                 myInternetConnection = InternetConnectionCapability.ConnectionBlocked;
-                _successAct(false);
+                if(_successAct!=null)
+                    _successAct(false);
                 yield break;
             }
 
             myInternetConnection = InternetConnectionCapability.Okay;
-            _successAct(true);           
+            if (_successAct != null)
+                _successAct(true);           
         }
     }
     #endregion
