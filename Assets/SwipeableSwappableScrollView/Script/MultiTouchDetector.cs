@@ -7,6 +7,7 @@ using UnityEngine.UI;
 public class MultiTouchDetector : Selectable, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     public RectTransform BtnHolder;
+    public RectTransform animHolder;
 
     [Header("Single/Swipe Setting")]
     [Tooltip("min pixel to become Swipe/Scroll")]
@@ -85,7 +86,7 @@ public class MultiTouchDetector : Selectable, IBeginDragHandler, IDragHandler, I
 
         switch (myBoardStatus)
         {
-            case TouchBoardStatus.SwipeMenu:
+            case TouchBoardStatus.LeftRight:
                 DetermineSwipeResult();
                 break;
             case TouchBoardStatus.LongPress:
@@ -108,7 +109,7 @@ public class MultiTouchDetector : Selectable, IBeginDragHandler, IDragHandler, I
                 base.OnPointerUp(pointerEventData);
                 break;
             case TouchBoardStatus.Unknown:
-            case TouchBoardStatus.Scroll:
+            case TouchBoardStatus.UpDown:
             default:
                 break;
         }
@@ -133,13 +134,14 @@ public class MultiTouchDetector : Selectable, IBeginDragHandler, IDragHandler, I
 
         switch (myBoardStatus)
         {
-            case TouchBoardStatus.SwipeMenu:
+            case TouchBoardStatus.LeftRight:
                 // Update hidden menu position
                 MoveBtnHolder(data.delta.x);
                 break;
             case TouchBoardStatus.LongPress:
+                myDnDHelper.OnBtnDrag(this, data);
                 break;
-            case TouchBoardStatus.Scroll:
+            case TouchBoardStatus.UpDown:
             case TouchBoardStatus.SingleClick:
             case TouchBoardStatus.Unknown:
             default:
@@ -151,6 +153,7 @@ public class MultiTouchDetector : Selectable, IBeginDragHandler, IDragHandler, I
     public void OnEndDrag(PointerEventData eventData)
     {
         //Debug.Log("OnEndDrag:" + eventData);
+        //// all the action are delayed to OnPointerUp()
     }
     #endregion
 
@@ -178,15 +181,16 @@ public class MultiTouchDetector : Selectable, IBeginDragHandler, IDragHandler, I
     /// <summary>
     /// Determine whether stay in CLICK or move to SWIPE/ SCROLL
     /// WILL NOT move status from LONGPress to SWIPE/ SCROLL
+    /// It is an One-way gate for state change
     /// </summary>
     /// <param name="_data"></param>
     public void DetermineClickOrDrag(PointerEventData _data)
     {
-        // do nothing if in status LongPress/ SwipeMenu/ Scroll
+        // do nothing if already in status LongPress/ SwipeMenu/ Scroll
         if (myBoardStatus != TouchBoardStatus.SingleClick)
             return;
 
-        // if total movement too little, ignore it!
+        // if total movement too little, wait for more data to determine
         if (acuumlatedSwipePixel.magnitude < minPixelLeaveClick)
             return;
 
@@ -196,19 +200,19 @@ public class MultiTouchDetector : Selectable, IBeginDragHandler, IDragHandler, I
         //Debug.Log("Drag/ Scroll");
         _data.eligibleForClick = false;
 
-        // Left or Right
-        if (acuumlatedSwipePixel.x > acuumlatedSwipePixel.y)
+        ////determine which direction is swiping        
+        if (acuumlatedSwipePixel.x > acuumlatedSwipePixel.y)// Left or Right
         {
-            myBoardStatus = TouchBoardStatus.SwipeMenu;
-            return;
+            myBoardStatus = TouchBoardStatus.LeftRight;
         }
+        else  // Up or Down
+        {
+            myBoardStatus = TouchBoardStatus.UpDown;
 
-        // Up or Down
-        myBoardStatus = TouchBoardStatus.Scroll;
-
-        //Delayed Scrolling Setup from OnBeginDrag
-        myScrollRect.OnBeginDrag(_data);
-        _data.pointerDrag = myScrollRect.gameObject;
+            //Delayed Scrolling Setup from OnBeginDrag
+            myScrollRect.OnBeginDrag(_data);
+            _data.pointerDrag = myScrollRect.gameObject;
+        }
     }
 
     // determine on/ off based on current location
@@ -243,7 +247,7 @@ public enum TouchBoardStatus
 {
     Unknown,
     SingleClick,
-    SwipeMenu,
-    Scroll,
+    LeftRight,
+    UpDown,
     LongPress
 }

@@ -19,6 +19,7 @@ public class ExampleBtnCreator : MonoBehaviour
         {
             var script = Instantiate(itemPrefab, contentHolder);
             script.gameObject.name = i.ToString();
+            script.transform.GetComponentInChildren<Text>().text = i.ToString();
             script.Init(myScrollRect, myDnDHelper, ()=> { Debug.Log(i + " is Cliecked!"); });
         }
     }

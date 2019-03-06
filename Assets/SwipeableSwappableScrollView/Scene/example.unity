@@ -323,7 +323,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   scrollRect: {fileID: 842486237}
   secondToDnDMode: 1
-  dragnDropMode: 0
 --- !u!114 &842486239
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -504,9 +503,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b84b90e745f89d44f91e5e7b138099b8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  scrollRect: {fileID: 0}
+  scrollRect: {fileID: 842486237}
   secondToDnDMode: 1
-  dragnDropMode: 0
 --- !u!1 &1956052391
 GameObject:
   m_ObjectHideFlags: 0

@@ -36,6 +36,15 @@ public class DragnDropHelper : MonoBehaviour
         Reset();
     }
 
+    public void OnBtnDrag(MultiTouchDetector _go, UnityEngine.EventSystems.PointerEventData data)
+    {
+        if (data.pointerEnter.transform == null || _go == data.pointerEnter.transform)
+            return;
+
+        //Debug.Log(data.pointerEnter.name + ":" + data.pointerEnter.transform.GetSiblingIndex().ToString());
+        _go.transform.SetSiblingIndex(data.pointerEnter.transform.GetSiblingIndex());
+    }
+
     public void CancelCountDownInvoke()
     {
         CancelInvoke("SetToDnDMode");
