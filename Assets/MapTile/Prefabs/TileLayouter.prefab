@@ -38,7 +38,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7fd3a4dcb7bccf4d8f351d491a42574, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  squareLength: 640
   minZoom: 12
   maxZoom: 18
   squareTilePrefab: {fileID: 0}
