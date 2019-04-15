@@ -22,13 +22,9 @@ public class SphericalCoordinate : MonoBehaviour
         var objToSpawn = new GameObject("RotationParent-"+ gameObject.name);
         parentTraY = objToSpawn.transform;
         parentTraY.SetParent(transform.parent);
-
-        if (transform.parent == null)
-            Debug.LogError("Object MUST be placed under a Game Object");
-
         transform.SetParent(parentTraY);
 
-        SetTransform(radius, azimuthalDegree, polarDegree);
+        SetTransform(radius, polarDegree, azimuthalDegree);
     }
     
     public void SetTransform(float _depth, float _polar, float _azimuthalDegree)
@@ -40,6 +36,6 @@ public class SphericalCoordinate : MonoBehaviour
     private void LateUpdate()
     {
         if(keepUpdating)
-            SetTransform(radius, azimuthalDegree, polarDegree);
+            SetTransform(radius, polarDegree-90, azimuthalDegree);
     }
 }
