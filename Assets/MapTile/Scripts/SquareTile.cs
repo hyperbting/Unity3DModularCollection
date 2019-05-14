@@ -15,6 +15,16 @@ public class SquareTile : MonoBehaviour
     [SerializeField]
     private RectTransform myRect;
 
+
+    [SerializeField]
+    private SquareTile til01;
+    [SerializeField]
+    private SquareTile til02;
+    [SerializeField]
+    private SquareTile til03;
+    [SerializeField]
+    private SquareTile til04;
+
     public void Setup(TileLayouter _owner, SquareTile _parent, int _zoomLevel, int _index, int _levelCount)
     {
         parent = _parent;
@@ -51,13 +61,13 @@ public class SquareTile : MonoBehaviour
         Vector2 center04 =  (Vector2.down + Vector2.right) * halfLength;
 
         //Instantiate
-        var til01 = owner.Instantiater(transform);
+        til01 = owner.Instantiater(transform);
         yield return null;
-        var til02 = owner.Instantiater(transform);
+        til02 = owner.Instantiater(transform);
         yield return null;
-        var til03 = owner.Instantiater(transform);
+        til03 = owner.Instantiater(transform);
         yield return null;
-        var til04 = owner.Instantiater(transform);
+        til04 = owner.Instantiater(transform);
         yield return null;
 
         til01.Setup(owner, this, nexZoo, 1, nexLayCou);
