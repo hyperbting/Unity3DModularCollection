@@ -275,7 +275,12 @@ public class AssetBundleKeeper : MonoBehaviour
         Caching.ClearOtherCachedVersions(_fileURL.fileName, abHash);
 
         Debug.Log("Try to Download " + _fileURL);
+
+#if UNITY_2018_1_OR_NEWER
+        using (UnityWebRequest _uwr = UnityWebRequestAssetBundle.GetAssetBundle(_fileURL.fullURL, abHash, 0))
+#else
         using (UnityWebRequest _uwr = UnityWebRequest.GetAssetBundle(_fileURL.fullURL, abHash, 0))
+#endif
         {
             _uwr.SendWebRequest();
 
@@ -356,9 +361,9 @@ public class AssetBundleKeeper : MonoBehaviour
             yield return null;
         }
     }
-    #endregion
+#endregion
 
-    #region status checker
+#region status checker
     public bool IsManifestReady()
     {
         if (myABM == null)
@@ -366,7 +371,7 @@ public class AssetBundleKeeper : MonoBehaviour
 
         return true;
     }
-    #endregion
+#endregion
 }
 
 [Serializable]
