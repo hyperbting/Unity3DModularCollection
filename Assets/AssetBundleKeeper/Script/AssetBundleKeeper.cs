@@ -313,27 +313,30 @@ public class AssetBundleKeeper : MonoBehaviour
     }
 
     /// <summary>
-    /// CoreDownloader is used to download ABM/ Video/ Texture
+    /// CoreDownloader is used to download Video/ Texture
     /// SAVE to DISK directly
     /// </summary>
     /// <param name="_fileURL"></param>
     /// <param name="_fail"></param>
     /// <param name="_progress"></param>
-    IEnumerator CoreDownloader(FileURL _fileURL, Action<byte[]> _success = null, Action<string> _fail=null, Action<float> _progress=null)
+    IEnumerator CoreDownloader(FileURL _fileURL, string filePath, Action<string> _fail=null, Action<float> _progress=null)
     {
         Debug.Log("Try to Download " + _fileURL);
         using (UnityWebRequest _uwr = UnityWebRequest.Get(_fileURL.fullURL))
         {
+            // save to Disk Directly
+            _uwr.downloadHandler = new DownloadHandlerFile(filePath)
+            {
+                removeFileOnAbort = true
+            };
             _uwr.SendWebRequest();
 
             yield return null;
 
             while (!_uwr.isDone)
             {
-                if (_progress != null)
-                    _progress(_uwr.downloadProgress);
-
                 yield return null;
+                _progress?.Invoke(_uwr.downloadProgress);                
             }
 
             if (_uwr.isNetworkError || _uwr.isHttpError)
@@ -342,23 +345,11 @@ public class AssetBundleKeeper : MonoBehaviour
                 if (_fail != null)
                     _fail(_uwr.error);
             }
-            else
-            {
-                Debug.Log("Downloaded: SAVE to DISK");
-                if (_uwr.downloadHandler.data != null)
-                {
-                    File.WriteAllBytes(_fileURL.localPath, _uwr.downloadHandler.data);
-
-                    yield return null;
-
-                    if (_success != null)
-                        _success(_uwr.downloadHandler.data);
-                }
-            }
 
             yield return null;
             yield return null;
             yield return null;
+            Resources.UnloadUnusedAssets();
         }
     }
 #endregion
