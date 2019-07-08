@@ -317,6 +317,7 @@ public class AssetBundleKeeper : MonoBehaviour
     /// SAVE to DISK directly
     /// </summary>
     /// <param name="_fileURL"></param>
+    /// <param name="filePath"></param>
     /// <param name="_fail"></param>
     /// <param name="_progress"></param>
     IEnumerator CoreDownloader(FileURL _fileURL, string filePath, Action<string> _fail=null, Action<float> _progress=null)
@@ -342,8 +343,7 @@ public class AssetBundleKeeper : MonoBehaviour
             if (_uwr.isNetworkError || _uwr.isHttpError)
             {
                 Debug.LogError("File Download Failed " + _uwr.error);
-                if (_fail != null)
-                    _fail(_uwr.error);
+                _fail?.Invoke(_uwr.error);
             }
 
             yield return null;
