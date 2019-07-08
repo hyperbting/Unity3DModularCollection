@@ -320,13 +320,13 @@ public class AssetBundleKeeper : MonoBehaviour
     /// <param name="filePath"></param>
     /// <param name="_fail"></param>
     /// <param name="_progress"></param>
-    IEnumerator CoreDownloader(FileURL _fileURL, string filePath, Action<string> _fail=null, Action<float> _progress=null)
+    IEnumerator CoreDownloader(FileURL _fileURL, Action<string> _fail=null, Action<float> _progress=null)
     {
         Debug.Log("Try to Download " + _fileURL);
         using (UnityWebRequest _uwr = UnityWebRequest.Get(_fileURL.fullURL))
         {
             // save to Disk Directly
-            _uwr.downloadHandler = new DownloadHandlerFile(filePath)
+            _uwr.downloadHandler = new DownloadHandlerFile(_fileURL.localPath)
             {
                 removeFileOnAbort = true
             };
