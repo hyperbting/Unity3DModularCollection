@@ -44,20 +44,14 @@ public class AssetBundleKeeper : MonoBehaviour
     public void DownloadABM()
     {
         //download ABM
-        StartCoroutine(CoreDownloader(ABM_PATH,
-            (byte[] _bytes) => {
-
-                //load ABM after ABM is downloaded
-                StartCoroutine(LoadABMFromDisk());
-            }
-        ));
+        StartCoroutine(CoreDownloader(ABM_PATH, ()=> { StartCoroutine(LoadABMFromDisk()); }));
     }
 
     /// <summary>
     /// Directly load ABM from Disk
     /// </summary>
     /// <param name="_forceReload"></param>
-    public IEnumerator LoadABMFromDisk(bool _force=false, Action _failAct=null)
+    IEnumerator LoadABMFromDisk(bool _force=false, Action _failAct=null)
     {
         Debug.Log("Loading ABM");
         if (_force)
@@ -77,8 +71,7 @@ public class AssetBundleKeeper : MonoBehaviour
         if (manifestBundle == null)
         {
             Debug.LogError("No AB holding ABM in Disk");
-            if(_failAct!=null)
-                _failAct(); 
+            _failAct?.Invoke(); 
             yield break;
         }
 
@@ -277,9 +270,9 @@ public class AssetBundleKeeper : MonoBehaviour
         Debug.Log("Try to Download " + _fileURL);
 
 #if UNITY_2018_1_OR_NEWER
-        using (UnityWebRequest _uwr = UnityWebRequestAssetBundle.GetAssetBundle(_fileURL.fullURL, abHash, 0))
+        using (var _uwr = UnityWebRequestAssetBundle.GetAssetBundle(_fileURL.fullURL, abHash, 0))
 #else
-        using (UnityWebRequest _uwr = UnityWebRequest.GetAssetBundle(_fileURL.fullURL, abHash, 0))
+        using (var _uwr = UnityWebRequest.GetAssetBundle(_fileURL.fullURL, abHash, 0))
 #endif
         {
             _uwr.SendWebRequest();
@@ -317,13 +310,14 @@ public class AssetBundleKeeper : MonoBehaviour
     /// SAVE to DISK directly
     /// </summary>
     /// <param name="_fileURL"></param>
-    /// <param name="filePath"></param>
+    /// <param name="_success"></param>
     /// <param name="_fail"></param>
     /// <param name="_progress"></param>
-    IEnumerator CoreDownloader(FileURL _fileURL, Action<string> _fail=null, Action<float> _progress=null)
+    /// <returns></returns>
+    IEnumerator CoreDownloader(FileURL _fileURL, Action _success = null, Action<string> _fail=null, Action<float> _progress=null)
     {
         Debug.Log("Try to Download " + _fileURL);
-        using (UnityWebRequest _uwr = UnityWebRequest.Get(_fileURL.fullURL))
+        using (var _uwr = UnityWebRequest.Get(_fileURL.fullURL))
         {
             // save to Disk Directly
             _uwr.downloadHandler = new DownloadHandlerFile(_fileURL.localPath)
@@ -401,9 +395,27 @@ public class FileURL
     /// </summary>
     public string localPath;
 
-    public void Setup(string _baseurl, string _platform, string _fileName, string _localPath)
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="_baseurl">should end with /</param>
+    /// <param name="_paths"></param>
+    /// <param name="_fileName"></param>
+    /// <param name="_localPath"></param>
+    public void Setup(string _baseurl, string[] _paths, string _fileName, string _localPath)
     {
-        fullURL = _baseurl + _platform + "/" + _fileName;
+        var sb = new System.Text.StringBuilder(_baseurl);
+        if (_baseurl[_baseurl.Length - 1] != '/')
+            sb.Append("/");
+
+        foreach (var str in _paths)
+        {
+            sb.Append(str);
+            sb.Append("/");
+        }
+        sb.Append(_fileName);
+
+        fullURL = sb.ToString();
         localPath = _localPath;
     }
 

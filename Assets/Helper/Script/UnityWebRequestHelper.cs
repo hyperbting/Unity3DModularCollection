@@ -22,7 +22,7 @@ public class UnityWebRequestHelper: MonoBehaviour {
     /// <returns></returns>
     public IEnumerator CheckFileSize(string _url, Action<int, bool> _resultAct)
     {
-        using (UnityWebRequest uwr = UnityWebRequest.Head(_url))
+        using (var uwr = UnityWebRequest.Head(_url))
         {
             uwr.timeout = 30;
             yield return uwr.SendWebRequest();
@@ -41,7 +41,7 @@ public class UnityWebRequestHelper: MonoBehaviour {
 
     public IEnumerator CheckServerSupportPartialContent(string _url, Action<bool> _resultAct, Action<string> _errorAct)
     {
-        using (UnityWebRequest uwr = UnityWebRequest.Head(_url))
+        using (var uwr = UnityWebRequest.Head(_url))
         {
             uwr.timeout = 30;
             yield return uwr.SendWebRequest();
@@ -65,7 +65,7 @@ public class UnityWebRequestHelper: MonoBehaviour {
     {
         DownloadHandler downloadHandler = new DownloadHandlerBuffer();
 
-        using (UnityWebRequest www = new UnityWebRequest(_url, UnityWebRequest.kHttpVerbGET, downloadHandler, null))
+        using (var www = new UnityWebRequest(_url, UnityWebRequest.kHttpVerbGET, downloadHandler, null))
         {
             www.SetRequestHeader("Range", string.Format("bytes={0}-{1}", _start, (_start + _windowSize - 1)));
             www.timeout = 60;
@@ -100,7 +100,7 @@ public class UnityWebRequestHelper: MonoBehaviour {
     /// <returns></returns>
     public IEnumerator DownloadWholeFile(string _url, Action<byte[]> _successAct, Action<float> _progressAct, Action<string> _errorAct)
     {
-        using (UnityWebRequest request = UnityWebRequest.Get(_url))
+        using (var request = UnityWebRequest.Get(_url))
         {
             request.SendWebRequest();
 
@@ -153,7 +153,7 @@ public class UnityWebRequestHelper: MonoBehaviour {
 
     public IEnumerator CheckInternetConnection(string _url, Action<bool> _successAct=null)
     {
-        using (UnityWebRequest uwr = UnityWebRequest.Get(_url))
+        using (var uwr = UnityWebRequest.Get(_url))
         {
             uwr.timeout = 30; // InternetConnection check MUST be done in 30 seconds
             yield return uwr.SendWebRequest();
